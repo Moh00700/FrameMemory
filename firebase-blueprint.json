@@ -1,0 +1,267 @@
+{
+  "entities": {
+    "SolvedMemory": {
+      "title": "SolvedMemory",
+      "description": "A half-remembered film, TV series, or anime mystery solved and saved to a user's personal vault.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID."
+        },
+        "queryText": {
+          "type": "string",
+          "description": "Original free-text scene memory entered by the user."
+        },
+        "filterSummary": {
+          "type": "string",
+          "description": "Summary of narrowing chips applied (decade, country, style, language)."
+        },
+        "title": {
+          "type": "string",
+          "description": "Resolved movie, TV show, or anime title."
+        },
+        "year": {
+          "type": "integer",
+          "description": "Release year of the title."
+        },
+        "mediaType": {
+          "type": "string",
+          "enum": ["MOVIE", "TV", "ANIME"],
+          "description": "Media category."
+        },
+        "country": {
+          "type": "string",
+          "description": "Origin country or region."
+        },
+        "style": {
+          "type": "string",
+          "enum": ["LIVE_ACTION", "ANIMATED"],
+          "description": "Production visual style."
+        },
+        "languageMode": {
+          "type": "string",
+          "enum": ["ORIGINAL", "SUBTITLED", "DUBBED"],
+          "description": "How the user watched or remembered it."
+        },
+        "directorOrCreator": {
+          "type": "string",
+          "description": "Director, creator, or animation studio."
+        },
+        "whyItMatched": {
+          "type": "string",
+          "description": "AI explanation of why the scene matches the title."
+        },
+        "iconicCue": {
+          "type": "string",
+          "description": "Short memorable detail or dialogue cue."
+        },
+        "posterUrl": {
+          "type": "string",
+          "description": "Resolved poster artwork URL."
+        },
+        "personalNote": {
+          "type": "string",
+          "description": "Optional user note saved with the memory."
+        },
+        "sharedToCommunity": {
+          "type": "boolean",
+          "description": "Whether this solved mystery has been shared to the community gems feed."
+        },
+        "communityMemoryId": {
+          "type": "string",
+          "description": "Document ID in community_memories if shared, or empty string."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when saved (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when last updated (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "queryText",
+        "filterSummary",
+        "title",
+        "year",
+        "mediaType",
+        "country",
+        "style",
+        "languageMode",
+        "directorOrCreator",
+        "whyItMatched",
+        "iconicCue",
+        "posterUrl",
+        "personalNote",
+        "sharedToCommunity",
+        "communityMemoryId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CommunityMemory": {
+      "title": "CommunityMemory",
+      "description": "A user-discovered cinematic gem published to the community trending feed for 'Was it this?' voting.",
+      "type": "object",
+      "properties": {
+        "authorId": {
+          "type": "string",
+          "description": "Creator Firebase Auth UID."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Public display name of the contributor."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["PUBLISHED", "HIDDEN"],
+          "description": "Publication visibility status."
+        },
+        "queryText": {
+          "type": "string",
+          "description": "The vague scene description that started the mystery."
+        },
+        "filterSummary": {
+          "type": "string",
+          "description": "Summary of narrowing chips."
+        },
+        "title": {
+          "type": "string",
+          "description": "Identified title."
+        },
+        "year": {
+          "type": "integer",
+          "description": "Release year."
+        },
+        "mediaType": {
+          "type": "string",
+          "enum": ["MOVIE", "TV", "ANIME"],
+          "description": "Media category."
+        },
+        "country": {
+          "type": "string",
+          "description": "Origin country."
+        },
+        "style": {
+          "type": "string",
+          "enum": ["LIVE_ACTION", "ANIMATED"],
+          "description": "Visual format."
+        },
+        "languageMode": {
+          "type": "string",
+          "enum": ["ORIGINAL", "SUBTITLED", "DUBBED"],
+          "description": "Audio or subtitle mode."
+        },
+        "directorOrCreator": {
+          "type": "string",
+          "description": "Director or studio."
+        },
+        "whyItMatched": {
+          "type": "string",
+          "description": "Explanation of the scene match."
+        },
+        "iconicCue": {
+          "type": "string",
+          "description": "Memorable cue from the scene."
+        },
+        "posterUrl": {
+          "type": "string",
+          "description": "Poster artwork URL."
+        },
+        "yesCount": {
+          "type": "integer",
+          "description": "Community votes confirming 'Yes, it was this!'."
+        },
+        "noCount": {
+          "type": "integer",
+          "description": "Community votes marking 'Not quite'."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when published (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when updated (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "authorId",
+        "authorName",
+        "status",
+        "queryText",
+        "filterSummary",
+        "title",
+        "year",
+        "mediaType",
+        "country",
+        "style",
+        "languageMode",
+        "directorOrCreator",
+        "whyItMatched",
+        "iconicCue",
+        "posterUrl",
+        "yesCount",
+        "noCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CommunityVote": {
+      "title": "CommunityVote",
+      "description": "Per-user vote record for a community memory ('YES', 'NO', or 'NONE').",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Voter Firebase Auth UID."
+        },
+        "memoryId": {
+          "type": "string",
+          "description": "Target community_memories document ID."
+        },
+        "vote": {
+          "type": "string",
+          "enum": ["YES", "NO", "NONE"],
+          "description": "Vote selection."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when vote record was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when vote record was updated."
+        }
+      },
+      "required": ["userId", "memoryId", "vote", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/solved_memories/{memoryId}": {
+      "schema": { "$ref": "#/entities/SolvedMemory" },
+      "description": "Personal mystery-solved vault scoped to each user."
+    },
+    "/users/{userId}/my_votes/{memoryId}": {
+      "schema": { "$ref": "#/entities/CommunityVote" },
+      "description": "User's personal index of community 'Was it this?' votes for reactive UI state."
+    },
+    "/community_memories/{memoryId}": {
+      "schema": { "$ref": "#/entities/CommunityMemory" },
+      "description": "Public trending feed of user-discovered cinematic gems."
+    },
+    "/community_memories/{memoryId}/votes/{voterUid}": {
+      "schema": { "$ref": "#/entities/CommunityVote" },
+      "description": "Authoritative per-user vote proof linked atomically to community_memories count updates."
+    }
+  }
+}

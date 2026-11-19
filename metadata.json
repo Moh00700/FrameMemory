@@ -1,0 +1,6 @@
+{
+  "name": "Frame Memory",
+  "description": "Identify movies, TV shows, and anime from vague half-remembered scenes with AI matching, narrowing filters, personal solved lists, and community voting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

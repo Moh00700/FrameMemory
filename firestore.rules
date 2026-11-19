@@ -1,0 +1,240 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidMediaType(val) {
+      return val is string && (val == 'MOVIE' || val == 'TV' || val == 'ANIME');
+    }
+
+    function isValidStyle(val) {
+      return val is string && (val == 'LIVE_ACTION' || val == 'ANIMATED');
+    }
+
+    function isValidLanguageMode(val) {
+      return val is string && (val == 'ORIGINAL' || val == 'SUBTITLED' || val == 'DUBBED');
+    }
+
+    function isValidVoteChoice(val) {
+      return val is string && (val == 'YES' || val == 'NO' || val == 'NONE');
+    }
+
+    function isValidSolvedMemory(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.queryText is string && data.queryText.size() >= 1 && data.queryText.size() <= 500 &&
+             data.filterSummary is string && data.filterSummary.size() <= 200 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+             data.year is int && data.year >= 1880 && data.year <= 2035 &&
+             isValidMediaType(data.mediaType) &&
+             data.country is string && data.country.size() >= 1 && data.country.size() <= 80 &&
+             isValidStyle(data.style) &&
+             isValidLanguageMode(data.languageMode) &&
+             data.directorOrCreator is string && data.directorOrCreator.size() <= 120 &&
+             data.whyItMatched is string && data.whyItMatched.size() >= 1 && data.whyItMatched.size() <= 1000 &&
+             data.iconicCue is string && data.iconicCue.size() <= 400 &&
+             data.posterUrl is string && data.posterUrl.size() <= 800 &&
+             data.personalNote is string && data.personalNote.size() <= 500 &&
+             data.sharedToCommunity is bool &&
+             data.communityMemoryId is string && data.communityMemoryId.size() <= 128 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidCommunityMemory(data) {
+      return data.authorId is string && data.authorId.size() >= 1 && data.authorId.size() <= 128 &&
+             data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 80 &&
+             (data.status == 'PUBLISHED' || data.status == 'HIDDEN') &&
+             data.queryText is string && data.queryText.size() >= 1 && data.queryText.size() <= 500 &&
+             data.filterSummary is string && data.filterSummary.size() <= 200 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+             data.year is int && data.year >= 1880 && data.year <= 2035 &&
+             isValidMediaType(data.mediaType) &&
+             data.country is string && data.country.size() >= 1 && data.country.size() <= 80 &&
+             isValidStyle(data.style) &&
+             isValidLanguageMode(data.languageMode) &&
+             data.directorOrCreator is string && data.directorOrCreator.size() <= 120 &&
+             data.whyItMatched is string && data.whyItMatched.size() >= 1 && data.whyItMatched.size() <= 1000 &&
+             data.iconicCue is string && data.iconicCue.size() <= 400 &&
+             data.posterUrl is string && data.posterUrl.size() <= 800 &&
+             data.yesCount is int && data.yesCount >= 0 &&
+             data.noCount is int && data.noCount >= 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidCommunityVote(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.memoryId is string && isValidId(data.memoryId) &&
+             isValidVoteChoice(data.vote) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidVoteDelta(prev, next) {
+      return next.yesCount is int && next.noCount is int &&
+             next.yesCount >= 0 && next.noCount >= 0 &&
+             (
+               (next.yesCount == prev.yesCount + 1 && next.noCount == prev.noCount) ||
+               (next.yesCount == prev.yesCount && next.noCount == prev.noCount + 1) ||
+               (next.yesCount == prev.yesCount - 1 && next.noCount == prev.noCount + 1) ||
+               (next.yesCount == prev.yesCount + 1 && next.noCount == prev.noCount - 1) ||
+               (next.yesCount == prev.yesCount - 1 && next.noCount == prev.noCount) ||
+               (next.yesCount == prev.yesCount && next.noCount == prev.noCount - 1)
+             );
+    }
+
+    match /users/{userId}/solved_memories/{memoryId} {
+      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(memoryId);
+      allow list: if isSignedIn() && request.auth.uid == userId;
+
+      allow create: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(memoryId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'queryText', 'filterSummary', 'title', 'year', 'mediaType',
+                         'country', 'style', 'languageMode', 'directorOrCreator', 'whyItMatched',
+                         'iconicCue', 'posterUrl', 'personalNote', 'sharedToCommunity',
+                         'communityMemoryId', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'queryText', 'filterSummary', 'title', 'year', 'mediaType',
+                         'country', 'style', 'languageMode', 'directorOrCreator', 'whyItMatched',
+                         'iconicCue', 'posterUrl', 'personalNote', 'sharedToCommunity',
+                         'communityMemoryId', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidSolvedMemory(incoming());
+
+      allow update: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(memoryId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidSolvedMemory(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'personalNote', 'sharedToCommunity', 'communityMemoryId', 'posterUrl', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(memoryId);
+    }
+
+    match /users/{userId}/my_votes/{memoryId} {
+      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(memoryId);
+      allow list: if isSignedIn() && request.auth.uid == userId;
+
+      allow create: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(memoryId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().memoryId == memoryId &&
+                       incoming().keys().hasAll(['userId', 'memoryId', 'vote', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'memoryId', 'vote', 'createdAt', 'updatedAt']) &&
+                       isValidCommunityVote(incoming());
+
+      allow update: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(memoryId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().memoryId == existing().memoryId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidCommunityVote(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['vote', 'updatedAt']);
+
+      allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(memoryId);
+    }
+
+    match /community_memories/{memoryId} {
+      allow get: if isSignedIn() && isValidId(memoryId) &&
+                    (existing().status == 'PUBLISHED' || existing().authorId == request.auth.uid);
+      allow list: if isSignedIn() &&
+                    (resource.data.status == 'PUBLISHED' || resource.data.authorId == request.auth.uid);
+
+      allow create: if isSignedIn() &&
+                       isValidId(memoryId) &&
+                       incoming().authorId == request.auth.uid &&
+                       incoming().status == 'PUBLISHED' &&
+                       incoming().yesCount == 0 &&
+                       incoming().noCount == 0 &&
+                       incoming().keys().hasAll([
+                         'authorId', 'authorName', 'status', 'queryText', 'filterSummary',
+                         'title', 'year', 'mediaType', 'country', 'style', 'languageMode',
+                         'directorOrCreator', 'whyItMatched', 'iconicCue', 'posterUrl',
+                         'yesCount', 'noCount', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'authorId', 'authorName', 'status', 'queryText', 'filterSummary',
+                         'title', 'year', 'mediaType', 'country', 'style', 'languageMode',
+                         'directorOrCreator', 'whyItMatched', 'iconicCue', 'posterUrl',
+                         'yesCount', 'noCount', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidCommunityMemory(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(memoryId) &&
+                       isValidCommunityMemory(incoming()) &&
+                       incoming().authorId == existing().authorId &&
+                       incoming().createdAt == existing().createdAt && (
+                         (
+                           existing().authorId == request.auth.uid &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['status', 'posterUrl', 'updatedAt'])
+                         ) ||
+                         (
+                           existing().status == 'PUBLISHED' &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['yesCount', 'noCount', 'updatedAt']) &&
+                           isValidVoteDelta(existing(), incoming()) &&
+                           existsAfter(/databases/$(database)/documents/community_memories/$(memoryId)/votes/$(request.auth.uid))
+                         )
+                       );
+
+      allow delete: if isSignedIn() && isValidId(memoryId) && existing().authorId == request.auth.uid;
+
+      match /votes/{voterUid} {
+        allow get: if isSignedIn() && isValidId(memoryId) && isValidId(voterUid) && request.auth.uid == voterUid;
+        allow list: if false;
+
+        allow create: if isSignedIn() &&
+                         isValidId(memoryId) &&
+                         isValidId(voterUid) &&
+                         request.auth.uid == voterUid &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().memoryId == memoryId &&
+                         exists(/databases/$(database)/documents/community_memories/$(memoryId)) &&
+                         incoming().keys().hasAll(['userId', 'memoryId', 'vote', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'memoryId', 'vote', 'createdAt', 'updatedAt']) &&
+                         isValidCommunityVote(incoming());
+
+        allow update: if isSignedIn() &&
+                         isValidId(memoryId) &&
+                         isValidId(voterUid) &&
+                         request.auth.uid == voterUid &&
+                         incoming().userId == existing().userId &&
+                         incoming().memoryId == existing().memoryId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidCommunityVote(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['vote', 'updatedAt']);
+
+        allow delete: if isSignedIn() && isValidId(memoryId) && isValidId(voterUid) && request.auth.uid == voterUid;
+      }
+    }
+  }
+}
